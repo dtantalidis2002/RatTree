@@ -1,0 +1,41 @@
+/*The recursive definition naturally lends itself to an algorithm for computing the function to any desired degree of accuracy for any real 
+number, as the following C function demonstrates. The algorithm descends the Stern–Brocot tree in search of the input x, and sums the terms of
+the binary expansion of y = ?(x) on the way. As long as the loop invariant qr − ps = 1 remains satisfied there is no need to reduce the fraction 
+m/n = p + r/q + s
+, since it is already in lowest terms. Another invariant is p/q ≤ x < r/s
+. The for loop in this program may be analyzed somewhat like a while loop, with the conditional break statements in the first three lines making out the condition. The only statements in the loop that can possibly affect the invariants are in the last two lines, and these can be shown to preserve the truth of both invariants as long as the first three lines have executed successfully without breaking out of the loop. A third invariant for the body of the loop (up to floating point precision) is y ≤ ?(x) < y + d, but since d is halved at the beginning of the loop before any conditions are tested, our conclusion is only that y ≤ ?(x) < y + 2d at the termination of the loop.
+
+To prove termination, it is sufficient to note that the sum q + s increases by at least 1 with every iteration of the loop, and that the loop will terminate when this sum is too large to be represented in the primitive C data type long. However, in practice, the conditional break when y + d == y is what ensures the termination of the loop in a reasonable amount of time.
+
+*/
+
+/* Minkowski's question-mark function */
+double minkowski(double x) {
+    long p = x;
+    if ((double)p > x) --p; /* p=floor(x) */
+    long q = 1, r = p + 1, s = 1, m, n;
+    double d = 1, y = p;
+    if (x < (double)p || (p < 0) ^ (r <= 0))
+        return x; /* out of range ?(x) =~ x */
+    for (;;) { /* invariants: q * r - p * s == 1 && (double)p / q <= x && x < (double)r / s */
+        d /= 2;
+        if (y + d == y)
+            break; /* reached max possible precision */
+        m = p + r;
+        if ((m < 0) ^ (p < 0))
+            break; /* sum overflowed */
+        n = q + s;
+        if (n < 0)
+            break; /* sum overflowed */
+
+        if (x < (double)m / n) {
+            r = m;
+            s = n;
+        } else {
+            y += d;
+            p = m;
+            q = n;
+        }
+    }
+    return y + d; /* final round-off */
+}
